@@ -1,20 +1,29 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron')
+const { app, BrowserWindow, ipcMain, session, globalShortcut } = require('electron')
 const path = require('node:path')
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // nodeIntegration: true,
+      nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false,
+      // contextIsolation: false, // 会导致模型加载不出来，隔离了上下文
     },
   })
 
   win.loadFile('dist/index.html')
+  // win.loadFile('index.html')
+  globalShortcut.register('command+option+i', () => {
+    win.webContents.openDevTools(
+      // {mode: 'detach'}
+    )
+  })
 }
 
 app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    console.log('details', details)
     callback({
       responseHeaders: {
         ...details.responseHeaders,
@@ -25,10 +34,10 @@ app.whenReady().then(() => {
       }
     })
   })
-  session.defaultSession.setProxy({
-    mode: 'fixed_servers',
-    proxyRules: 'http://111.198.15.161:9900'
-  })
+  // session.defaultSession.setProxy({
+  //   mode: 'fixed_servers',
+  //   proxyRules: 'http://111.198.15.161:9900'
+  // })
 
   createWindow()
   ipcMain.handle('ping', () => 'pong')
